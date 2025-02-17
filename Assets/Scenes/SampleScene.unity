@@ -184,7 +184,7 @@ MonoBehaviour:
   - {fileID: -523212850912773951, guid: 327f33c2ad9c59147a6805147ba729bb, type: 3}
   - {fileID: 3830565682483415335, guid: 6f00d4abce959d049997576609062c3b, type: 3}
   cardPosition: {x: 0, y: 0}
-  grid: {fileID: 0}
+  grid: {fileID: 403290356}
 --- !u!114 &95377187
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -228,7 +228,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 95377188}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 95377186}
+        m_TargetAssemblyTypeName: Card, Assembly-CSharp
+        m_MethodName: press
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &95377188
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -663,7 +675,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   CardPrefab: {fileID: 95377184}
-  occupied: 00000000
   rows:
   - {fileID: 1175108903}
   - {fileID: 248484996}
@@ -2549,7 +2560,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
