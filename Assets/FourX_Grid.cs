@@ -3,16 +3,44 @@ using Unity.Mathematics;
 using Unity.Mathematics.Geometry;
 using UnityEditor;
 using UnityEngine;
+using System.Collections.Generic;
+using UnityEngine.UI;
+using Unity.VisualScripting;
+using NUnit;
+using static UnityEditor.PlayerSettings;
 
 public class FourX_Grid : MonoBehaviour
 {
     public GameObject CardPrefab;
     public bool[,] occupied = new bool[6,6];
-    public Transform[] rows;
     public int[] cards;
     private int rndm,store;
     private bool selected;
     private Card cardSelect1, cardSelect2;
+    private int gridSize = 6;
+    public Transform[] pathPoints1, pathPoints2, pathPoints3, pathPoints4,pathPoints5,pathPoints6;
+
+    private readonly Vector2Int[] directions = {
+        new Vector2Int(1, 0),  // Right
+        new Vector2Int(-1, 0), // Left
+        new Vector2Int(0, 1),  // Up
+        new Vector2Int(0, -1)  // Down
+    };
+
+    struct Node
+    {
+        public Vector2Int position;
+        public Vector2Int direction;
+        public int turnCount;
+
+        public Node(Vector2Int pos, Vector2Int dir, int turns)
+        {
+            position = pos;
+            direction = dir;
+            turnCount = turns;
+        }
+    }
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -23,7 +51,10 @@ public class FourX_Grid : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if(Input.GetKeyDown("o"))
+        {
+            clearDrawTest();
+        }
     }
 
     void generateCards()
@@ -32,8 +63,9 @@ public class FourX_Grid : MonoBehaviour
         {
             for(int j=0;j<4;j++)
             {
-                GameObject card = Instantiate(CardPrefab, rows[i]);
-                card.GetComponent<Card>().initializeCard(cards[i * 4 + j], new Vector2(j,i));
+                //GameObject card = Instantiate(CardPrefab, rows[i]);
+                Transform card = transform.GetChild(0).GetChild(i).GetChild(j);
+                card.GetComponent<Card>().initializeCard(cards[i * 4 + j], new Vector2Int(j,i));
                 card.GetComponent<Card>().grid = this;
                 occupied[j+1,i+1] = true;
             }
@@ -70,133 +102,175 @@ public class FourX_Grid : MonoBehaviour
             selected = false;
             cardSelect2 = card;
 
-            if(cardSelect1.cardID == cardSelect2.cardID)
+            if(cardSelect1.cardID == cardSelect2.cardID && cardSelect1.cardPosition != cardSelect2.cardPosition)
             {
-                bool check = startVectors(cardSelect1,cardSelect2);
+                bool check = checkVectors(cardSelect1.cardPosition + new Vector2Int(1,1), cardSelect2.cardPosition + new Vector2Int(1, 1));
                 if(check)
                 {
-                    Debug.Log("correct");
+                    Debug.Log("Matched & clear path :)");
+                    occupied[cardSelect1.cardPosition.x+1, cardSelect1.cardPosition.y+1] = false;
+                    occupied[cardSelect2.cardPosition.x + 1, cardSelect2.cardPosition.y + 1] = false;
+                    Destroy(cardSelect1.gameObject);
+                    Destroy(cardSelect2.gameObject);
                 }
                 else
                 {
-                    Debug.Log("false");
+                    Debug.Log("Matched but not clear path :(");
+                    cardSelect1.unSelect();
+                    cardSelect2.unSelect();
                 }
             }
             else
             {
-                Debug.Log("false");
+                Debug.Log("Not Even Matched :(");
+                cardSelect1.unSelect();
+                cardSelect2.unSelect();
             }
         }
     }
 
-    public bool startVectors(Card card1,Card card2)
+
+    public bool checkVectors(Vector2Int start,Vector2Int end)
     {
-        return checkVectors(card1.cardPosition,card1,card2);
+        Queue<Node> queue = new Queue<Node>();
+        HashSet<(Vector2Int, Vector2Int)> visited = new HashSet<(Vector2Int, Vector2Int)>();
+        Dictionary<Vector2Int, Vector2Int> cameFrom = new Dictionary<Vector2Int, Vector2Int>();
+
+        foreach (var dir in directions)
+        {
+            queue.Enqueue(new Node(start, dir, 0));
+            visited.Add((start, dir));
+        }
+
+        while(queue.Count > 0)
+        {
+            Node current = queue.Dequeue();
+
+            foreach(var dir in directions)
+            {
+                Vector2Int newPos = current.position + dir;
+                int newTurnCount = 0;
+                if(dir == current.direction)
+                {
+                    newTurnCount = current.turnCount;
+                }
+                else
+                {
+                    newTurnCount = current.turnCount + 1;
+                }
+
+
+                if (isValidPos(newPos) && !visited.Contains((newPos,dir)) && newTurnCount <= 3)
+                {
+                    queue.Enqueue(new Node(newPos, dir, newTurnCount));
+                    visited.Add((newPos, dir));
+
+                    if (!cameFrom.ContainsKey(newPos))
+                    {
+                        cameFrom[newPos] = current.position;
+                    }
+                }
+
+                if (newPos == end && newTurnCount <= 3)
+                {
+                    cameFrom[newPos] = current.position;
+
+                    drawPath(checkPath(cameFrom, start, end));
+
+                    return true;
+                }
+
+            }
+        }
+
+        return false;
     }
 
-    public bool checkVectors(Vector2 currentNode, Card card1, Card card2)
+    bool isValidPos(Vector2Int pos)
     {
-        Vector2 rightDr = new Vector2(currentNode.x + 1, currentNode.y);
-        Vector2 leftDr = new Vector2(currentNode.x - 1, currentNode.y);
-        Vector2 upDr = new Vector2(currentNode.x, currentNode.y + 1);
-        Vector2 downDr = new Vector2(currentNode.x, currentNode.y - 1);
-        bool right_check = false;
-        bool left_check = false;
-        bool up_check = false;
-        bool down_check = false;
-
-        if (rightDr.x + 1 < 6 && rightDr.y + 1 < 6)
-        {
-            if (occupied[(int)rightDr.x + 1, (int)rightDr.y + 1] == false)
-            {
-                right_check = checkVectors(rightDr,card1, card2);
-            }
-            else
-            {
-                if(card2.cardPosition == rightDr)
-                {
-                    //correct
-                    occupied[(int)card1.cardPosition.x + 1, (int)card1.cardPosition.y + 1] = false;
-                    occupied[(int)card2.cardPosition.x + 1, (int)card2.cardPosition.y + 1] = false;
-                    Destroy(card1.gameObject);
-                    Destroy(card2.gameObject);
-
-                    return true;
-                }
-
-            }
-        }
-        //---------------//
-        if (leftDr.x + 1 < 6 && leftDr.y + 1 < 6)
-        {
-            if (occupied[(int)leftDr.x + 1, (int)leftDr.y + 1] == false)
-            {
-                left_check = checkVectors(leftDr,card1, card2);
-            }
-            else
-            {
-                if (card2.cardPosition == leftDr)
-                {
-                    //correct
-                    occupied[(int)card1.cardPosition.x + 1, (int)card1.cardPosition.y + 1] = false;
-                    occupied[(int)card2.cardPosition.x + 1, (int)card2.cardPosition.y + 1] = false;
-                    Destroy(card1.gameObject);
-                    Destroy(card2.gameObject);
-
-                    return true;
-                }
-
-            }
-        }
-        //---------------//
-        if (upDr.x + 1 < 6 && upDr.y + 1 < 6)
-        {
-            if (occupied[(int)upDr.x + 1, (int)upDr.y + 1] == false)
-            {
-                up_check = checkVectors(upDr,card1, card2);
-            }
-            else
-            {
-                if (card2.cardPosition == upDr)
-                {
-                    //correct
-                    occupied[(int)card1.cardPosition.x + 1, (int)card1.cardPosition.y + 1] = false;
-                    occupied[(int)card2.cardPosition.x + 1, (int)card2.cardPosition.y + 1] = false;
-                    Destroy(card1.gameObject);
-                    Destroy(card2.gameObject);
-
-                    return true;
-                }
-
-            }
-        }
-        //---------------//
-        if (downDr.x + 1 < 6 && downDr.y + 1 < 6)
-        {
-            if (occupied[(int)downDr.x + 1, (int)downDr.y + 1] == false)
-            {
-                down_check = checkVectors(downDr,card1 ,card2);
-            }
-            else
-            {
-                if (card2.cardPosition == downDr)
-                {
-                    //correct
-                    occupied[(int)card1.cardPosition.x + 1, (int)card1.cardPosition.y + 1] = false;
-                    occupied[(int)card2.cardPosition.x + 1, (int)card2.cardPosition.y + 1] = false;
-                    Destroy(card1.gameObject);
-                    Destroy(card2.gameObject);
-
-                    return true;
-                }
-
-            }
-        }
-
-        if(right_check&left_check&up_check&down_check)
+        if(pos.x >= 0 && pos.x < gridSize && pos.y >= 0 && pos.y < gridSize && !occupied[pos.x,pos.y])
         {
             return true;
         }
-        return false;
+        else
+        {
+            return false;
+        }
+    }
+
+    private List<Vector2Int> checkPath(Dictionary<Vector2Int, Vector2Int> cameFrom, Vector2Int start, Vector2Int end)
+    {
+        List<Vector2Int> path = new List<Vector2Int>();
+        Vector2Int current = end;
+
+        while (current != start)
+        {
+            path.Add(current);
+            current = cameFrom[current];
+        }
+
+        path.Add(start);
+        path.Reverse();
+
+        return path;
+    }
+
+    private void drawPath(List<Vector2Int> path)
+    {
+        foreach(Vector2Int pos in path)
+        {
+            if (pos.y == 0)
+            {
+                pathPoints1[pos.x].gameObject.SetActive(true);
+            }
+            else if (pos.y == 1)
+            {
+                pathPoints2[pos.x].gameObject.SetActive(true);
+            }
+            else if (pos.y == 2)
+            {
+                pathPoints3[pos.x].gameObject.SetActive(true);
+            }
+            else if (pos.y == 3)
+            {
+                pathPoints4[pos.x].gameObject.SetActive(true);
+            }
+            else if (pos.y == 4)
+            {
+                pathPoints5[pos.x].gameObject.SetActive(true);
+            }
+            else if (pos.y == 5)
+            {
+                pathPoints6[pos.x].gameObject.SetActive(true);
+            }
+        }
+    }
+
+    void clearDrawTest()
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            pathPoints1[i].gameObject.SetActive(false);
+        }
+        for (int i = 0; i < 6; i++)
+        {
+            pathPoints2[i].gameObject.SetActive(false);
+        }
+        for (int i = 0; i < 6; i++)
+        {
+            pathPoints3[i].gameObject.SetActive(false);
+        }
+        for (int i = 0; i < 6; i++)
+        {
+            pathPoints4[i].gameObject.SetActive(false);
+        }
+        for (int i = 0; i < 6; i++)
+        {
+            pathPoints5[i].gameObject.SetActive(false);
+        }
+        for (int i = 0; i < 6; i++)
+        {
+            pathPoints6[i].gameObject.SetActive(false);
+        }
     }
 }
