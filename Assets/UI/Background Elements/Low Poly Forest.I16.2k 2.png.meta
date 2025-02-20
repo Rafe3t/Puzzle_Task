@@ -185,7 +185,9 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Low Poly Forest.I16.2k 2_0: -7730003190624053342
+      Low Poly Forest.I16.2k 2_1: -4759800853694911271
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

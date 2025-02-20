@@ -233,6 +233,8 @@ MonoBehaviour:
   - {fileID: -7576359616612518793, guid: 4d8ffec3168962e4cb60ea5da3975818, type: 3}
   - {fileID: -523212850912773951, guid: 327f33c2ad9c59147a6805147ba729bb, type: 3}
   - {fileID: 3830565682483415335, guid: 6f00d4abce959d049997576609062c3b, type: 3}
+  - {fileID: -1562340643022433542, guid: 3eec7ee007e72b443bdf1f47ba9e74bc, type: 3}
+  - {fileID: -8959669787454120234, guid: 1ab442ef8bd5ef946b6be1bb3b306876, type: 3}
   selectedIcon: {fileID: 6328712686510772229}
   cardPosition: {x: 0, y: 0}
   grid: {fileID: 0}

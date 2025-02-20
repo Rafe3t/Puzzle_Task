@@ -19,18 +19,21 @@ public class Card : MonoBehaviour
 
     public void press()
     {
-        grid.connect(this);
         selected = true;
 
-        if(selected)
+        if (selected)
         {
             selectedIcon.SetActive(true);
         }
+
+        grid.connect(this);
+        
     }
 
     public void unSelect()
     {
         selectedIcon.SetActive(false);
+        selected = false;
     }
 
 }
